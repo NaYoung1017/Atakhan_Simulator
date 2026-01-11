@@ -2,917 +2,1517 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <title>아타칸 전투 시뮬레이터 V3.5 (Final Size)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>명조: 아카네 스킬 시뮬레이터</title>
     <style>
-      body {
+      /* --- 기본 설정 --- */
+      * {
         margin: 0;
-        overflow: hidden;
-        background-color: #0f0f0f;
-        color: #eee;
-        font-family: "Malgun Gothic", sans-serif;
+        padding: 0;
+        box-sizing: border-box;
         user-select: none;
       }
-
-      #game-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-      }
-      canvas {
-        display: block;
-        background: #1a1a1d;
-        outline: none;
-      }
-
-      /* 타이머 */
-      #timer-display {
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 32px;
-        font-weight: bold;
-        color: #ffd700;
-        text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        pointer-events: none;
-        z-index: 20;
-      }
-
-      /* 좌측 패널 */
-      #ui-panel {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 320px;
-        background: rgba(18, 18, 18, 0.95);
-        border-right: 2px solid #333;
-        padding: 20px;
-        overflow-y: auto;
-        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
-        z-index: 30;
-      }
-
-      #ui-panel::-webkit-scrollbar {
-        width: 6px;
-      }
-      #ui-panel::-webkit-scrollbar-thumb {
-        background: #444;
-        border-radius: 3px;
-      }
-
-      .section-title {
-        font-size: 16px;
-        font-weight: bold;
-        color: #ff5252;
-        margin-top: 20px;
-        margin-bottom: 10px;
-        padding-bottom: 5px;
-        border-bottom: 1px solid #444;
-        text-transform: uppercase;
-      }
-      .section-title:first-child {
-        margin-top: 0;
-      }
-
-      .ui-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        font-size: 13px;
-        color: #ccc;
-      }
-      .ui-desc {
-        font-size: 11px;
-        color: #888;
-        margin-bottom: 10px;
-        line-height: 1.4;
-      }
-
-      input[type="number"] {
-        width: 60px;
-        background: #333;
-        border: 1px solid #555;
-        color: white;
-        padding: 4px;
-        border-radius: 4px;
-        text-align: right;
-      }
-      input[type="number"]:focus {
-        border-color: #29b6f6;
-        outline: none;
-      }
-
-      .stat-value {
-        font-weight: bold;
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #000;
         color: #fff;
-      }
-
-      .pattern-box {
-        background: #222;
-        border: 1px solid #444;
-        padding: 10px;
-        border-radius: 6px;
-        text-align: center;
-        margin-bottom: 10px;
-      }
-      .bar-bg {
-        width: 100%;
-        height: 6px;
-        background: #444;
-        margin-top: 5px;
-        border-radius: 3px;
+        height: 100vh;
+        display: flex;
         overflow: hidden;
       }
-      .bar-fill {
-        height: 100%;
-        width: 0%;
-        transition: width 0.1s linear;
+      #game-view {
+        flex-grow: 1;
+        position: relative;
+        background: #121212;
+        overflow: hidden;
+        cursor: crosshair;
       }
-
-      #start-screen {
+      .grid-bg {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 100;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-      button {
-        background: #d32f2f;
-        color: white;
-        border: none;
-        padding: 15px 50px;
-        font-size: 24px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 8px;
-        margin-top: 30px;
-        box-shadow: 0 0 20px rgba(211, 47, 47, 0.5);
-      }
-      button:hover {
-        background: #b71c1c;
-        transform: scale(1.05);
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.08) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        background-size: 50px 50px;
+        pointer-events: none;
       }
 
-      #controls-hint {
+      /* --- UI 패널 --- */
+      #ui-panel {
+        width: 360px;
+        min-width: 360px;
+        background: #1e1e1e;
+        border-left: 1px solid #333;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: -5px 0 20px #000;
+        z-index: 2000;
+      }
+      h2 {
+        color: #00e5ff;
+        font-size: 20px;
+        margin-bottom: 5px;
+      }
+      .sub {
+        font-size: 12px;
+        color: #aaa;
+        margin-bottom: 15px;
+      }
+      .gauge-wrap {
+        background: #333;
+        height: 10px;
+        margin-bottom: 5px;
+        position: relative;
+      }
+      .gauge-fill {
+        height: 100%;
+        width: 0%;
+        background: #00e5ff;
+        transition: width 0.2s;
+      }
+      .concerto-fill {
+        height: 100%;
+        width: 0%;
+        background: #ffd700;
+        transition: width 0.2s;
+      }
+      .feather-box {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 15px;
+        margin-top: 10px;
+      }
+      .feather {
+        width: 24px;
+        height: 24px;
+        background: #333;
+        border: 2px solid #555;
+        transform: rotate(45deg);
+      }
+      .feather.on {
+        background: #fff;
+        border-color: #ffd54f;
+        box-shadow: 0 0 10px #ffd54f;
+      }
+      .btn-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      button {
+        padding: 10px;
+        background: #222;
+        color: #fff;
+        border: 1px solid #444;
+        cursor: pointer;
+        text-align: left;
+        border-radius: 6px;
+        position: relative;
+      }
+      button:hover {
+        background: #333;
+        border-color: #00e5ff;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-enh {
+        border-color: #ffd54f;
+        color: #ffd54f;
+      }
+      .desc {
+        font-size: 11px;
+        color: #aaa;
+        display: block;
+        margin-top: 3px;
+        line-height: 1.4;
+      }
+      .cd {
         position: absolute;
-        bottom: 20px;
-        left: 340px;
-        right: 20px;
-        text-align: center;
-        color: #666;
-        font-size: 14px;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: #f44336;
+        width: 0%;
+      }
+
+      /* --- 플레이어 & 엔티티 --- */
+      #player-pos {
+        position: absolute;
+        width: 0;
+        height: 0;
+        z-index: 100;
         pointer-events: none;
+      }
+      #player-rot {
+        position: absolute;
+        width: 0;
+        height: 0;
+        transition: transform 0.05s linear;
+      }
+      #player-body {
+        position: absolute;
+        width: 44px;
+        height: 44px;
+        background: #29b6f6;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 15px #29b6f6;
+        transition: transform 0.1s, background 0.3s;
+      }
+      #player-arrow {
+        position: absolute;
+        top: -35px;
+        left: -10px;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-bottom: 20px solid #ffd54f;
+      }
+      #charge-bar-wrap {
+        position: absolute;
+        top: -55px;
+        left: -30px;
+        width: 60px;
+        height: 6px;
+        background: #333;
+        border-radius: 3px;
+        display: none;
+        border: 1px solid #777;
+      }
+      #charge-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: #ffd54f;
+      }
+      .switched-out #player-body {
+        background: #757575 !important;
+        box-shadow: none;
+        border-color: #aaa;
+      }
+      .switched-out #player-arrow {
+        border-bottom-color: #aaa;
+      }
+      .buff-text {
+        position: absolute;
+        top: -100px;
+        left: 0;
+        transform: translateX(-50%);
+        color: #00ff00;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        white-space: nowrap;
+        text-shadow: 2px 2px 2px #000;
+        pointer-events: none;
+        width: 300px;
+      }
+      .enemy {
+        position: absolute;
+        width: 36px;
+        height: 36px;
+        background: #ef5350;
+        border: 2px solid #ffcdd2;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 50;
+        transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .enemy.targeted {
+        border-color: #00e5ff;
+        box-shadow: 0 0 15px #00e5ff;
+      }
+
+      /* --- 범위 가이드 --- */
+      .range-guide {
+        position: absolute;
+        pointer-events: none;
+        z-index: 40;
+        display: none;
+        transform-origin: bottom center;
+        bottom: 0;
+        left: -50%;
+        transform: translateX(-50%);
+      }
+      .range-box {
+        background: rgba(0, 229, 255, 0.05);
+        border: 1px dashed rgba(0, 229, 255, 0.3);
+      }
+      .range-circle {
+        border-radius: 50%;
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px dashed rgba(0, 229, 255, 0.5);
+      }
+      .range-fan {
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 250px 150px 0 150px;
+        border-color: rgba(255, 255, 255, 0.1) transparent transparent
+          transparent;
+        border-radius: 50%;
+        transform-origin: top center;
+      }
+      .range-heavy-arrow {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 100px;
+        background: rgba(255, 213, 79, 0.5);
+      }
+      .range-heavy-circle {
+        position: absolute;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: rgba(255, 213, 79, 0.1);
+        border: 1px dashed rgba(255, 213, 79, 0.6);
+      }
+
+      /* --- 이펙트 --- */
+      .vfx {
+        position: absolute;
+        pointer-events: none;
+        z-index: 300;
+        transform: translate(-50%, -50%);
+      }
+      .slash-hit {
+        width: 140px;
+        height: 140px;
+        background: linear-gradient(
+            45deg,
+            transparent 45%,
+            #fff 50%,
+            transparent 55%
+          ),
+          linear-gradient(-45deg, transparent 45%, #00e5ff 50%, transparent 55%);
+        background-size: 100% 100%;
+        opacity: 0;
+        animation: slashHitAnim 0.2s ease-out forwards;
+        filter: drop-shadow(0 0 5px #00e5ff);
+      }
+      .wind-blast {
+        width: 150px;
+        height: 200px;
+        background: linear-gradient(
+          to top,
+          transparent,
+          rgba(255, 255, 255, 0.8),
+          transparent
+        );
+        opacity: 0;
+        animation: blastAnim 0.3s ease-out forwards;
+      }
+      .heavy-trail {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 213, 79, 0.6);
+        border-radius: 50%;
+        box-shadow: 0 0 10px #ffd54f;
+        opacity: 0.8;
+        animation: fadeOut 0.3s forwards;
+      }
+      .storm-blade {
+        width: 400px;
+        height: 40px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          #00e5ff,
+          #fff,
+          #00e5ff,
+          transparent
+        );
+        box-shadow: 0 0 20px #00e5ff;
+        opacity: 0;
+        animation: stormBladeAnim 0.25s ease-out forwards;
+      }
+      .storm-fall {
+        width: 80px;
+        height: 250px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          #ffd54f,
+          #fff,
+          transparent
+        );
+        opacity: 0;
+        box-shadow: 0 0 20px #ff6f00;
+        animation: fallAnim 0.3s ease-out forwards;
+      }
+      .wind-blade {
+        width: 15px;
+        height: 60px;
+        background: #fff;
+        box-shadow: 0 0 10px #00e5ff;
+        border-radius: 8px;
+        opacity: 0.9;
+      }
+      .storm-zone {
+        border-radius: 50%;
+        border: 2px dashed #00e5ff;
+        background: rgba(0, 229, 255, 0.2);
+        animation: spin 1s linear infinite;
+      }
+      .ult-zone {
+        border-radius: 50%;
+        border: 3px solid #2979ff;
+        background: rgba(41, 121, 255, 0.15);
+        animation: pulse 2s infinite;
+      }
+      .ult-zone.enhanced {
+        border-color: #ffd54f;
+        background: rgba(255, 213, 79, 0.2);
+      }
+      .ult-burst-zone {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        border: 2px solid #ff5252;
+        background: rgba(255, 82, 82, 0.3);
+        animation: fadeOut 0.5s forwards;
+      }
+      .intro-fan {
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(255, 255, 255, 0) 70%
+        );
+        clip-path: polygon(50% 50%, 0% 0%, 100% 0%);
+        transform-origin: center center;
+        opacity: 0;
+        animation: fanExpand 0.4s ease-out forwards;
+      }
+      .intro-flash {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 30px #00e5ff, 0 0 60px #fff;
+        opacity: 0;
+        animation: flashAnim 0.3s ease-out forwards;
+      }
+      .dmg-text {
+        position: absolute;
+        font-weight: bold;
+        font-size: 14px;
+        text-shadow: 1px 1px 2px #000;
+        z-index: 400;
+        animation: floatUp 0.8s forwards;
+        white-space: nowrap;
+      }
+      #debug {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: #aaa;
+        font-size: 12px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 5px;
+      }
+
+      @keyframes slashHitAnim {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.5) rotate(45deg);
+        }
+      }
+      @keyframes blastAnim {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) translateY(20px) scaleY(0.5);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) translateY(-150px) scaleY(1.5);
+        }
+      }
+      @keyframes stormBladeAnim {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) rotate(var(--rot)) scaleX(0.5);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) rotate(var(--rot)) scaleX(1.2);
+        }
+      }
+      @keyframes fallAnim {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) translateY(-150px) scaleY(1.5);
+        }
+        50% {
+          opacity: 1;
+          transform: translate(-50%, -50%) translateY(0) scaleY(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) translateY(20px) scaleY(0.5);
+        }
+      }
+      @keyframes fanExpand {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(0.5) rotate(var(--rot));
+        }
+        100% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.5) rotate(var(--rot));
+        }
+      }
+      @keyframes flashAnim {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(0.2);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(2);
+        }
+      }
+      @keyframes spin {
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+      @keyframes pulse {
+        0% {
+          opacity: 0.8;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 0.8;
+        }
+      }
+      @keyframes floatUp {
+        to {
+          transform: translateY(-40px);
+          opacity: 0;
+        }
+      }
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="game-container">
-      <canvas id="canvas" tabindex="1"></canvas>
-
-      <div id="timer-display">00:00.0</div>
-
-      <div id="ui-panel">
-        <div class="section-title">챔피언 설정 (Stats)</div>
-        <div class="ui-row">
-          <span>기본 체력 (HP)</span>
-          <input type="number" id="inp-hp" value="3500" step="100" />
-        </div>
-        <div class="ui-row">
-          <span>기본 방어력 (AR)</span>
-          <input type="number" id="inp-ar" value="100" />
-        </div>
-        <div class="ui-row">
-          <span>기본 마법저항 (MR)</span>
-          <input type="number" id="inp-mr" value="70" />
-        </div>
-
-        <div class="section-title" style="color: #29b6f6">
-          실시간 상태 (Live)
-        </div>
-        <div class="ui-row">
-          <span>현재 체력</span>
-          <span id="disp-hp" class="stat-value">3500</span>
-        </div>
-        <div class="ui-row">
-          <span>실제 방어/마저</span>
-          <span id="disp-def" class="stat-value">100 / 70</span>
-        </div>
-        <div class="ui-row">
-          <span>약화 스택 (Max 50)</span>
-          <span id="disp-stack" class="stat-value" style="color: #ff5252"
-            >0</span
-          >
-        </div>
-        <div class="ui-desc">
-          * 약화: 중첩당 방/마저 -1<br />
-          *
-          <strong style="color: #ff5252"
-            >4초간 미피격 시 모든 스택 초기화</strong
-          >
-        </div>
-
-        <div class="section-title">아타칸 스킬 정보</div>
-
-        <div class="ui-row">
-          <span style="color: #ff8a65">⚔️ 기본 공격</span>
-          <span
-            >부여 스택:
-            <input type="number" id="stack-aa" value="2" style="width: 30px"
-          /></span>
-        </div>
-        <div class="ui-desc">
-          100% AD + 현재 체력 3% 물리 피해.<br />
-          사거리 150 (붉은 점선 표시).
-        </div>
-
-        <div class="ui-row">
-          <span style="color: #b388ff">🔮 암흑 탄환</span>
-          <span
-            >부여 스택:
-            <input type="number" id="stack-bolt" value="5" style="width: 30px"
-          /></span>
-        </div>
-        <div class="ui-desc">
-          현재 체력 4% 마법 피해.<br />
-          궤도 고정 4연발 사격.
-        </div>
-
-        <div class="ui-row">
-          <span style="color: #ea80fc">⭕ 고통의 고리</span>
-          <span
-            >부여 스택:
-            <input type="number" id="stack-ring" value="5" style="width: 30px"
-          /></span>
-        </div>
-        <div class="ui-desc">
-          현재 체력 10% 마법 피해.<br />
-          8개의 고리가 순차적으로 조여옴.
-        </div>
-
-        <div class="ui-row">
-          <span style="color: #9c27b0">🟣 어둠의 오라</span>
-          <span
-            >부여 스택:
-            <input type="number" id="stack-aura" value="1" style="width: 30px"
-          /></span>
-        </div>
-        <div class="ui-desc">
-          데미지 없음 (스택만 부여).<br />
-          2.75초마다 무조건 발동.
-        </div>
-
-        <div class="section-title">패턴 모니터 (Timing)</div>
-        <div class="pattern-box">
-          <div
-            id="boss-state-text"
-            style="font-weight: bold; margin-bottom: 5px"
-          >
-            IDLE
-          </div>
-          <div id="boss-action-text" style="font-size: 12px; color: #aaa">
-            대기 중
-          </div>
-          <div class="bar-bg">
-            <div
-              class="bar-fill"
-              id="action-bar"
-              style="background: #ffd700"
-            ></div>
-          </div>
-        </div>
-        <div class="ui-row">
-          <span>인내심 (리셋)</span>
-          <div class="bar-bg" style="width: 100px">
-            <div
-              class="bar-fill"
-              id="patience-bar"
-              style="background: #ef5350; width: 100%"
-            ></div>
-          </div>
-        </div>
+    <div id="game-view">
+      <div class="grid-bg"></div>
+      <div id="debug">
+        WASD: 이동 | Space: 점프 | 1: 변주(입장 스킬) | 2: 반주(퇴장 스킬) | E:
+        특수 스킬 | R: 궁극기
       </div>
 
-      <div id="start-screen">
-        <h1
-          style="
-            color: #d32f2f;
-            font-size: 50px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px red;
-          "
-        >
-          ATAKHAN SIMULATOR V3.5
-        </h1>
-        <p style="color: #bbb; font-size: 18px">
-          아타칸 근처에서 [SPACE] 입력 시 전투가 시작됩니다.
-        </p>
-        <button id="start-btn">시작하기</button>
-      </div>
+      <div id="player-pos">
+        <div id="buff-display" class="buff-text"></div>
 
-      <div id="controls-hint">
-        🎮 [WASD] 이동 &nbsp;|&nbsp; ⚔️ [SPACE] 전투 시작 &nbsp;|&nbsp; 🖱️
-        [CLICK] 포커스
+        <div id="player-rot">
+          <div id="guide-box" class="range-guide range-box"></div>
+          <div id="guide-heavy" class="range-guide">
+            <div class="range-heavy-arrow"></div>
+            <div class="range-heavy-circle"></div>
+          </div>
+          <div id="guide-circle" class="range-guide range-circle"></div>
+          <div id="guide-fan" class="range-guide range-fan"></div>
+
+          <div id="player-arrow"></div>
+          <div id="player-body"></div>
+          <div id="charge-bar-wrap"><div id="charge-bar-fill"></div></div>
+        </div>
       </div>
     </div>
 
+    <div id="ui-panel">
+      <div><h2>아카네 스킬 프로토타입</h2></div>
+      <div>
+        <div
+          style="font-size: 12px; display: flex; justify-content: space-between"
+        >
+          <span>협주 에너지</span><span id="concerto-txt">0/100</span>
+        </div>
+        <div class="gauge-wrap">
+          <div id="concerto-fill" class="concerto-fill"></div>
+        </div>
+
+        <div
+          style="
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+          "
+        >
+          <span>공명 에너지</span><span id="pt-txt">0/150</span>
+        </div>
+        <div class="gauge-wrap">
+          <div id="gauge-fill" class="gauge-fill"></div>
+        </div>
+
+        <div class="feather-box">
+          <div id="f1" class="feather"></div>
+          <div id="f2" class="feather"></div>
+          <div id="f3" class="feather"></div>
+        </div>
+      </div>
+      <div class="btn-list">
+        <button
+          onmouseenter="ui.guide('box',5,10)"
+          onmouseleave="ui.noguide()"
+          onclick="combat.normal()"
+        >
+          일반 공격 (L-Click)
+          <span class="desc"
+            >부채를 전방으로 4번 휘둘러 범위 내 적을 타격합니다.</span
+          >
+        </button>
+        <button
+          onmouseenter="ui.guide('heavy')"
+          onmouseleave="ui.noguide()"
+          onmousedown="input.chargeStart()"
+          onmouseup="input.chargeEnd()"
+        >
+          강공격 (R-Click Hold)
+          <span class="desc"
+            >전방으로 도약 후 회전하며 주변의 적을 중심점으로 모읍니다.</span
+          >
+        </button>
+        <button
+          id="btn-skill"
+          onmouseenter="ui.guide('circle',6,6,3)"
+          onmouseleave="ui.noguide()"
+          onclick="combat.skill()"
+        >
+          공명 스킬 (E)
+          <span id="txt-skill" class="desc"
+            >첫번째 공명 스킬 : 전방에 폭풍을 생성하여 적을 견인합니다.
+            <br />두번째 공명 스킬 : 바람 칼날로 적을 베어 피해를 줍니다.</span
+          >
+          <div id="cd-skill" class="cd"></div>
+        </button>
+        <button
+          id="btn-ult"
+          onmouseenter="ui.guide('circle',20,20,0)"
+          onmouseleave="ui.noguide()"
+          onclick="combat.ult()"
+        >
+          공명 해방 (R)
+          <span id="txt-ult" class="desc"
+            >광범위한 폭류 영역을 전개하여 지속 피해를 입힙니다. <br />3스택
+            소모 시 파티원의 기류 피해를 부스트합니다.</span
+          >
+          <div id="cd-ult" class="cd"></div>
+        </button>
+        <button
+          style="background: #4a148c; border-color: #7c43bd"
+          onmouseenter="ui.guide('fan')"
+          onmouseleave="ui.noguide()"
+          onclick="combat.intro()"
+        >
+          변주 : 입장 스킬 (1)
+          <span class="desc"
+            >전장에 난입하여 적을 밀쳐내고 기류 피해를 입힙니다.</span
+          >
+        </button>
+        <button
+          id="btn-outro"
+          style="background: #6a1b9a; border-color: #9c27b0"
+          onclick="combat.outro()"
+        >
+          반주 : 퇴장 스킬 (2)
+          <span class="desc"
+            >다음 캐릭터에게 기류 및 공명 해방 피해 증가 버프를
+            부여합니다.</span
+          >
+        </button>
+      </div>
+      <button
+        onclick="game.reset()"
+        style="
+          margin-top: auto;
+          padding: 12px;
+          background: #b71c1c;
+          border: none;
+          color: white;
+        "
+      >
+        초기화
+      </button>
+    </div>
+
     <script>
-      /**
-       * 아타칸 전투 시뮬레이터 V3.5 (Final Size)
-       * - 플레이어 크기 축소 (35)
-       * - 아타칸 크기 확대 (60)
-       */
+      const METER = 50;
+      const state = {
+        p: { x: 500, y: 400, rot: -Math.PI / 2 },
+        stats: { en: 0, st: 0, concerto: 0 },
+        keys: { w: false, a: false, s: false, d: false },
+        mouse: { x: 0, y: 0 },
+        flags: { acting: false, jump: false, charging: false, gliding: false },
+        timer: null,
+        chargeStart: 0,
+        combo: 1,
+        comboT: 0,
+        skill: { phase: 1, pos: null, cd: 0, timer: 0, enhanced: false },
+        ult: { cd: 0 },
+        introAnim: {
+          active: false,
+          sx: 0,
+          sy: 0,
+          ex: 0,
+          ey: 0,
+          startTime: 0,
+          duration: 0,
+          hitTriggered: false,
+        },
+        isSwitchedOut: false,
+        outroBuffTime: 0,
+        enemies: [],
+        effects: [],
+      };
 
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-
-      const CONFIG = {
-        playerSpeed: 3.2,
-        bossSpeed: 3.0,
-        homeRadius: 800,
-        triggerRadius: 250,
-        aaRange: 150,
-        auraRadius: 600,
-        bossAD: 140,
-        bossAS: 0.75,
-        boltCastTime: 1750,
-        ringCastTime: 2750,
-        auraInterval: 2750,
-        maxPatience: 5000,
-        gapInitial: 2000,
-        gapAfterBolt: 6000,
-        gapAfterRing: 1300,
+      const input = {
+        init: () => {
+          const v = document.getElementById("game-view");
+          document.addEventListener("keydown", (e) => {
+            const k = e.key.toLowerCase();
+            if (["w", "a", "s", "d"].includes(k)) state.keys[k] = true;
+            if (k === " ") combat.jump();
+            if (k === "e") combat.skill();
+            if (k === "r") combat.ult();
+            if (k === "1") combat.intro();
+            if (k === "2") combat.outro();
+          });
+          document.addEventListener("keyup", (e) => {
+            if (["w", "a", "s", "d"].includes(e.key.toLowerCase()))
+              state.keys[e.key.toLowerCase()] = false;
+          });
+          v.addEventListener("mousemove", (e) => {
+            const r = v.getBoundingClientRect();
+            state.mouse.x = e.clientX - r.left;
+            state.mouse.y = e.clientY - r.top;
+          });
+          v.addEventListener("mousedown", (e) => {
+            if (e.button === 0) combat.normal();
+            if (e.button === 2) input.chargeStart();
+          });
+          v.addEventListener("mouseup", (e) => {
+            if (e.button === 2) input.chargeEnd();
+          });
+          v.addEventListener("contextmenu", (e) => e.preventDefault());
+        },
+        chargeStart: () => {
+          if (
+            !state.flags.acting &&
+            !state.isSwitchedOut &&
+            !state.flags.gliding
+          ) {
+            state.flags.charging = true;
+            state.chargeStart = Date.now();
+          }
+        },
+        chargeEnd: () => {
+          state.flags.charging = false;
+          const chargeBar = document.getElementById("charge-bar-wrap");
+          if (chargeBar) chargeBar.style.display = "none";
+        },
       };
 
       const game = {
-        running: false,
-        lastTime: 0,
-        combatTime: 0,
-        player: {
-          x: 0,
-          y: 0,
-          r: 35, // 반경 35 (지름 70) - 작아짐
-          color: "#29b6f6",
-          baseHp: 3500,
-          currentHp: 3500,
-          baseAr: 100,
-          baseMr: 70,
-          stacks: 0,
-          stackDropTimer: 0,
+        init: () => {
+          game.spawn();
+          input.init();
+          requestAnimationFrame(game.loop);
         },
-        boss: {
-          x: 0,
-          y: 0,
-          r: 60, // 반경 60 (지름 120) - 커짐
-          color: "#d32f2f",
-          homeX: 0,
-          homeY: 0,
-          state: "IDLE",
-          patience: CONFIG.maxPatience,
-          aaCooldownTimer: 0,
-          targetAngle: 0,
+        spawn: () => {
+          const view = document.getElementById("game-view");
+          for (let i = 0; i < 6; i++) {
+            const el = document.createElement("div");
+            el.className = "enemy";
+            state.enemies.push({
+              el,
+              x: Math.random() * (view.clientWidth - 100) + 50,
+              y: Math.random() * (view.clientHeight - 100) + 50,
+            });
+            view.appendChild(el);
+          }
         },
-        isAggro: false,
-        auraTimer: 0,
-        sequenceStep: 0,
-        actionTimer: 0,
-        boltCount: 0,
-        projectiles: [],
-        rings: [],
-        particles: [],
-        texts: [],
-      };
-
-      const keys = {
-        up: false,
-        down: false,
-        left: false,
-        right: false,
-        space: false,
-      };
-
-      const ui = {
-        inpHp: document.getElementById("inp-hp"),
-        inpAr: document.getElementById("inp-ar"),
-        inpMr: document.getElementById("inp-mr"),
-        stackAA: document.getElementById("stack-aa"),
-        stackBolt: document.getElementById("stack-bolt"),
-        stackRing: document.getElementById("stack-ring"),
-        stackAura: document.getElementById("stack-aura"),
-        dispHp: document.getElementById("disp-hp"),
-        dispDef: document.getElementById("disp-def"),
-        dispStack: document.getElementById("disp-stack"),
-        timer: document.getElementById("timer-display"),
-        bossState: document.getElementById("boss-state-text"),
-        bossAction: document.getElementById("boss-action-text"),
-        actionBar: document.getElementById("action-bar"),
-        patienceBar: document.getElementById("patience-bar"),
-      };
-
-      function init() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        game.boss.x = 0;
-        game.boss.y = 0;
-        resetPlayer();
-        game.player.y = 400;
-      }
-
-      function resetPlayer() {
-        game.player.baseHp = parseFloat(ui.inpHp.value) || 3500;
-        game.player.baseAr = parseFloat(ui.inpAr.value) || 100;
-        game.player.baseMr = parseFloat(ui.inpMr.value) || 70;
-        game.player.currentHp = game.player.baseHp;
-        game.player.stacks = 0;
-        game.player.stackDropTimer = 0;
-      }
-
-      function loop(timestamp) {
-        if (!game.running) return;
-        const dt = timestamp - game.lastTime;
-        game.lastTime = timestamp;
-        update(dt);
-        render();
-        updateUI();
-        requestAnimationFrame(loop);
-      }
-
-      function update(dt) {
-        const { player, boss } = game;
-
-        let dx = 0,
-          dy = 0;
-        if (keys.up) dy -= 1;
-        if (keys.down) dy += 1;
-        if (keys.left) dx -= 1;
-        if (keys.right) dx += 1;
-        if (dx !== 0 || dy !== 0) {
-          const len = Math.sqrt(dx * dx + dy * dy);
-          player.x += (dx / len) * CONFIG.playerSpeed;
-          player.y += (dy / len) * CONFIG.playerSpeed;
-        }
-        player.x = Math.max(-1500, Math.min(1500, player.x));
-        player.y = Math.max(-1500, Math.min(1500, player.y));
-
-        if (player.stacks > 0) {
-          player.stackDropTimer -= dt;
-          if (player.stackDropTimer <= 0) player.stacks = 0;
-        }
-
-        if (game.isAggro) game.combatTime += dt;
-
-        const distHome = Math.hypot(boss.x, boss.y);
-        const distPlayer = Math.hypot(player.x - boss.x, player.y - boss.y);
-
-        if (game.isAggro) {
-          if (distHome > CONFIG.homeRadius) {
-            boss.patience -= dt;
-            if (boss.patience <= 0) triggerReset();
-          } else {
-            boss.patience = Math.min(CONFIG.maxPatience, boss.patience + dt);
+        reset: () => {
+          state.stats.en = 0;
+          state.stats.st = 0;
+          state.stats.concerto = 0;
+          state.skill = { phase: 1, pos: null, cd: 0, timer: 0, enhanced: false };
+          state.ult.cd = 0;
+          state.flags.jump = false;
+          state.isSwitchedOut = false;
+          state.outroBuffTime = 0;
+          state.flags.gliding = false;
+          if (state.timer) {
+            clearTimeout(state.timer);
+            state.timer = null;
           }
-        } else if (
-          boss.state === "IDLE" &&
-          keys.space &&
-          distPlayer <= CONFIG.triggerRadius
-        ) {
-          startCombat();
-        }
+          state.enemies.forEach((e) => e.el.remove());
+          state.enemies = [];
+          state.effects.forEach((e) => e.el.remove());
+          state.effects = [];
+          const playerPos = document.getElementById("player-pos");
+          if (playerPos) playerPos.classList.remove("switched-out");
+          game.spawn();
+        },
+        loop: () => {
+          if (!state.introAnim.active)
+            state.p.rot = Math.atan2(
+              state.mouse.y - state.p.y,
+              state.mouse.x - state.p.x
+            );
 
-        if (boss.state === "RESET") {
-          const ang = Math.atan2(-boss.y, -boss.x);
-          boss.x += Math.cos(ang) * CONFIG.bossSpeed * 3;
-          boss.y += Math.sin(ang) * CONFIG.bossSpeed * 3;
-          if (Math.hypot(boss.x, boss.y) < 10) {
-            boss.state = "IDLE";
-            boss.patience = CONFIG.maxPatience;
-            game.isAggro = false;
+          // 이동 로직
+          if (
+            !state.flags.acting &&
+            !state.flags.charging &&
+            !state.introAnim.active
+          ) {
+            let dx = 0,
+              dy = 0;
+            if (state.keys.w) dy -= 1;
+            if (state.keys.s) dy += 1;
+            if (state.keys.a) dx -= 1;
+            if (state.keys.d) dx += 1;
+            if (dx || dy) {
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              state.p.x += (dx / dist) * 5;
+              state.p.y += (dy / dist) * 5;
+            }
+            const v = document.getElementById("game-view");
+            state.p.x = Math.max(25, Math.min(v.clientWidth - 25, state.p.x));
+            state.p.y = Math.max(25, Math.min(v.clientHeight - 25, state.p.y));
           }
-          return;
-        }
 
-        if (game.isAggro) {
-          updateAura(dt);
-          updateBossPattern(dt, distPlayer);
-        }
-        updateObjects(dt);
-      }
-
-      function triggerReset() {
-        game.isAggro = false;
-        game.boss.state = "RESET";
-        game.combatTime = 0;
-        resetPlayer();
-        game.projectiles = [];
-        game.rings = [];
-        addText(game.boss.x, game.boss.y - 80, "리셋!", "#ef4444");
-      }
-
-      function startCombat() {
-        game.isAggro = true;
-        game.combatTime = 0;
-        game.boss.state = "GAP";
-        game.sequenceStep = 0;
-        game.actionTimer = CONFIG.gapInitial;
-        game.auraTimer = CONFIG.auraInterval;
-        addText(game.boss.x, game.boss.y - 80, "전투 시작!", "#ffd700");
-      }
-
-      function updateAura(dt) {
-        game.auraTimer -= dt;
-        if (game.auraTimer <= 0) {
-          game.auraTimer = CONFIG.auraInterval;
-          spawnParticle(game.boss.x, game.boss.y, "#9c27b0", 20);
-          const dist = Math.hypot(
-            game.player.x - game.boss.x,
-            game.player.y - game.boss.y
-          );
-          if (dist <= CONFIG.auraRadius) applyHit("AURA");
-        }
-      }
-
-      function updateBossPattern(dt, dist) {
-        const { boss } = game;
-        if (boss.aaCooldownTimer > 0) boss.aaCooldownTimer -= dt;
-
-        if (boss.state.startsWith("CAST")) {
-          game.actionTimer -= dt;
-          if (boss.state === "CAST_BOLT") {
-            const elapsed = CONFIG.boltCastTime - game.actionTimer;
-            const shotsNeeded = Math.floor(elapsed / (CONFIG.boltCastTime / 4));
-            if (game.boltCount === 0 && shotsNeeded === 0) {
-              boss.targetAngle = Math.atan2(
-                game.player.y - boss.y,
-                game.player.x - boss.x
+          if (state.introAnim.active) {
+            const now = Date.now();
+            const prog = Math.min(
+              (now - state.introAnim.startTime) / state.introAnim.duration,
+              1
+            );
+            const ease = 1 - Math.pow(1 - prog, 3);
+            state.p.x =
+              state.introAnim.sx +
+              (state.introAnim.ex - state.introAnim.sx) * ease;
+            state.p.y =
+              state.introAnim.sy +
+              (state.introAnim.ey - state.introAnim.sy) * ease;
+            if (prog > 0.3 && !state.introAnim.hitTriggered) {
+              state.introAnim.hitTriggered = true;
+              ui.spawnOneShot(
+                "intro-fan",
+                state.p.x,
+                state.p.y,
+                state.p.rot + Math.PI / 2
               );
+              combat.checkIntroHit();
             }
-            if (shotsNeeded > game.boltCount && shotsNeeded <= 4) {
-              fireBolt(boss.targetAngle);
-              game.boltCount++;
-            }
-          }
-          if (game.actionTimer <= 0) {
-            if (boss.state === "CAST_BOLT") {
-              game.boss.state = "GAP";
-              game.actionTimer = CONFIG.gapAfterBolt;
-              game.sequenceStep = 2;
-            } else if (boss.state === "CAST_RING") {
-              game.boss.state = "GAP";
-              game.actionTimer = CONFIG.gapAfterRing;
-              game.sequenceStep = 4;
+            if (prog >= 1) {
+              state.introAnim.active = false;
+              state.flags.acting = false;
+              state.flags.jump = false;
             }
           }
-          return;
-        }
 
-        if (
-          boss.state === "GAP" ||
-          boss.state === "ATTACK" ||
-          boss.state === "CHASE"
-        ) {
-          game.actionTimer -= dt;
-          if (game.actionTimer <= 0) {
-            if (game.sequenceStep === 0 || game.sequenceStep === 4) {
-              startSkill("CAST_BOLT", CONFIG.boltCastTime);
-              game.boltCount = 0;
-            } else if (game.sequenceStep === 2) {
-              startSkill("CAST_RING", CONFIG.ringCastTime);
-              spawnRings();
+          if (state.flags.charging && !state.isSwitchedOut) {
+            const pct = Math.min((Date.now() - state.chargeStart) / 500, 1);
+            const barWrap = document.getElementById("charge-bar-wrap");
+            const barFill = document.getElementById("charge-bar-fill");
+            if (barWrap && barFill) {
+              barWrap.style.display = "block";
+              barFill.style.width = pct * 100 + "%";
             }
+            if (pct >= 1) {
+              state.flags.charging = false;
+              if (barWrap) barWrap.style.display = "none";
+              combat.heavy();
+            }
+          }
+
+          if (state.comboT > 0) {
+            state.comboT--;
+            if (state.comboT <= 0) state.combo = 1;
+          }
+          if (state.skill.cd > 0) state.skill.cd--;
+          if (state.ult.cd > 0) state.ult.cd--;
+          
+          // 2차 스킬 발동 대기 시간(4초) 초과 시 초기화
+          if (
+            state.skill.phase === 2 &&
+            Date.now() - state.skill.timer > 4000
+          ) {
+            state.skill.phase = 1;
+            state.skill.pos = null;
+            state.skill.enhanced = false;
+            // 2차 발동 안했으므로 쿨타임 없음(기획 의도에 따라 조정 가능, 여기선 초기화만)
+          }
+
+          if (state.outroBuffTime > 0) state.outroBuffTime -= 16.6;
+
+          state.effects.forEach((fx) => {
+            if (fx.type === "storm") {
+              if (fx.r < 300) fx.r += 0.83;
+              fx.el.style.width = fx.r * 2 + "px";
+              fx.el.style.height = fx.r * 2 + "px";
+              state.enemies.forEach((e) => {
+                if (Math.hypot(e.x - fx.x, e.y - fx.y) < fx.r) {
+                  e.x += (fx.x - e.x) * 0.05;
+                  e.y += (fx.y - e.y) * 0.05;
+                }
+              });
+            }
+            if (fx.type === "ult") {
+              if (fx.life % 60 === 0)
+                combat.hitCheck(fx.x, fx.y, 1000, "DoT", false, 0);
+              // 궁극기 지속시간 종료 시 쿨타임 25초 시작
+              if (fx.life <= 1) {
+                state.ult.cd = 25 * 60;
+              }
+            }
+            if (fx.type === "projectile") {
+              fx.x += fx.vx;
+              fx.y += fx.vy;
+              fx.el.style.left = fx.x + "px";
+              fx.el.style.top = fx.y + "px";
+            }
+            fx.life--;
+          });
+          for (let i = state.effects.length - 1; i >= 0; i--) {
+            if (state.effects[i].life <= 0) {
+              state.effects[i].el.remove();
+              state.effects.splice(i, 1);
+            }
+          }
+
+          ui.render();
+          ui.update();
+          requestAnimationFrame(game.loop);
+        },
+      };
+
+      const combat = {
+        normal: () => {
+          if (state.isSwitchedOut) return;
+          if (state.flags.jump || state.flags.gliding) return combat.aerial();
+          if (state.flags.acting) return;
+          state.flags.acting = true;
+          state.comboT = 120;
+          const s = state.combo;
+          const rangeM = s <= 2 ? 10 : 9;
+          if (s === 3) {
+            state.p.x += Math.cos(state.p.rot) * 50;
+            state.p.y += Math.sin(state.p.rot) * 50;
+          }
+
+          const target = combat.findTargetInBox(
+            5,
+            rangeM,
+            state.p.x,
+            state.p.y,
+            state.p.rot
+          );
+          let hits = [],
+            hitOriginX,
+            hitOriginY,
+            hitRot = state.p.rot;
+
+          if (target) {
+            hitRot = Math.atan2(target.y - state.p.y, target.x - state.p.x);
+            state.p.rot = hitRot;
+            hitOriginX = target.x;
+            hitOriginY = target.y;
+            hits = combat.getEnemiesInBox(5, 3, hitOriginX, hitOriginY, hitRot);
+          } else {
+            hitOriginX = state.p.x;
+            hitOriginY = state.p.y;
+            hits = combat.getEnemiesInBox(5, 3, hitOriginX, hitOriginY, hitRot);
+          }
+
+          let fxClass = s === 4 ? "wind-blast" : "slash-hit";
+          let visRot = s === 4 ? hitRot + Math.PI / 2 : 0;
+          const fxDist = (3 * METER) / 2;
+          const fxX = hitOriginX + Math.cos(hitRot) * fxDist;
+          const fxY = hitOriginY + Math.sin(hitRot) * fxDist;
+
+          if (hits.length > 0) {
+            hits.forEach((e) => {
+              ui.spawnOneShot(fxClass, e.x, e.y, visRot);
+              ui.text(e.x, e.y, `${s}타!`);
+              if (s === 4) combat.knockback(e, 100);
+            });
+            const gains = [10, 12, 18, 10];
+            const concertos = [3, 4, 7, 6];
+            combat.gain(gains[s - 1], concertos[s - 1]);
+          } else {
+            ui.spawnOneShot(fxClass, fxX, fxY, visRot);
+          }
+          state.combo = (s % 4) + 1;
+          setTimeout(() => (state.flags.acting = false), s === 3 ? 400 : 250);
+        },
+        heavy: () => {
+          if (state.isSwitchedOut) return;
+          if (state.flags.acting) return;
+          state.flags.acting = true;
+          const startX = state.p.x,
+            startY = state.p.y;
+          state.p.x += Math.cos(state.p.rot) * 100;
+          state.p.y += Math.sin(state.p.rot) * 100;
+          ui.text(state.p.x, state.p.y, "도약!", "yellow");
+          const cx = state.p.x + Math.cos(state.p.rot) * 200;
+          const cy = state.p.y + Math.sin(state.p.rot) * 200;
+          ui.spawnOneShot("storm-zone", cx, cy, 0);
+          let ang = state.p.rot + Math.PI,
+            frame = 0,
+            hitAny = false;
+          const interval = setInterval(() => {
+            frame++;
+            ang += 0.2;
+            state.p.x = cx + Math.cos(ang) * 200;
+            state.p.y = cy + Math.sin(ang) * 200;
+            state.p.rot = ang + Math.PI / 2;
+            if (frame % 2 === 0)
+              ui.spawnOneShot("heavy-trail", state.p.x, state.p.y, 0);
+            state.enemies.forEach((e) => {
+              if (Math.hypot(e.x - cx, e.y - cy) < 250) {
+                e.x += (cx - e.x) * 0.1;
+                e.y += (cy - e.y) * 0.1;
+                hitAny = true;
+              }
+            });
+            if (frame >= 30) {
+              clearInterval(interval);
+              state.p.x = startX;
+              state.p.y = startY;
+              if (hitAny) combat.gain(20, 10);
+
+              state.flags.gliding = true;
+              state.flags.jump = true;
+              ui.text(state.p.x, state.p.y, "활공...", "#aaffaa");
+
+              if (state.timer) clearTimeout(state.timer);
+              state.timer = setTimeout(() => {
+                if (state.flags.gliding) {
+                  state.flags.gliding = false;
+                  state.flags.jump = false;
+                  state.flags.acting = false;
+                  state.timer = null;
+                }
+              }, 3250);
+            }
+          }, 16);
+        },
+        skill: () => {
+          if (state.isSwitchedOut) return;
+          if (state.flags.acting) return;
+
+          // [2차 스킬: 칼날 폭풍 / 낙풍]
+          if (state.skill.phase === 2 && state.skill.pos) {
+            state.flags.acting = true;
+            let enh = state.skill.enhanced; // 1차에서 결정된 강화 여부 사용
+
+            let hits = state.enemies.filter(
+              (e) =>
+                Math.hypot(e.x - state.skill.pos.x, e.y - state.skill.pos.y) <
+                3 * METER
+            );
+            let fxName = enh ? "storm-fall" : "storm-blade";
+            let rot = enh ? 0 : state.p.rot + Math.PI / 2;
+            if (hits.length > 0) {
+              hits.forEach((e) => {
+                ui.spawnOneShot(fxName, e.x, e.y, rot);
+                ui.text(e.x, e.y, enh ? "낙풍!" : "칼날!");
+              });
+              // 2차 스킬 적중 시 강화 여부와 관계없이 1스택(50pt) 획득
+              combat.gain(50, 15);
+            } else
+              ui.spawnOneShot(
+                fxName,
+                state.skill.pos.x,
+                state.skill.pos.y,
+                rot
+              );
+            
+            state.skill.phase = 1;
+            state.skill.pos = null;
+            state.skill.enhanced = false;
+            // 2차 스킬 사용 후 쿨타임 12초 적용
+            state.skill.cd = 12 * 60;
+            setTimeout(() => (state.flags.acting = false), 400);
             return;
           }
 
-          if (boss.aaCooldownTimer <= 0) {
-            if (dist <= CONFIG.aaRange + 60) {
-              // 사거리 보정 (보스 반경 60)
-              boss.state = "ATTACK";
-              boss.aaCooldownTimer = 1333;
-              applyHit("AA");
-              spawnParticle(game.player.x, game.player.y, "#fff", 15);
-            } else {
-              boss.state = "CHASE";
-              const ang = Math.atan2(
-                game.player.y - boss.y,
-                game.player.x - boss.x
-              );
-              boss.x += Math.cos(ang) * CONFIG.bossSpeed;
-              boss.y += Math.sin(ang) * CONFIG.bossSpeed;
+          // [1차 스킬: 선율의 바람]
+          if (state.skill.cd > 0) return;
+          state.flags.acting = true;
+          
+          // 1차 스킬 발동 시 스택 있으면 소모하여 2차 강화 예약
+          if (state.stats.st >= 1) {
+            state.stats.st--;
+            state.skill.enhanced = true; // 강화 예약
+            ui.text(state.p.x, state.p.y - 50, "-1 Stack (강화 장전)", "red");
+          } else {
+            state.skill.enhanced = false;
+          }
+
+          const tx = state.p.x + Math.cos(state.p.rot) * 150;
+          const ty = state.p.y + Math.sin(state.p.rot) * 150;
+          ui.spawnZone("storm", tx, ty, 150, 180);
+          
+          // 1차 스킬 적중 시 에너지 획득 없음 (기획서: 2차 적중 시 획득)
+          combat.gain(0, 15); 
+          
+          state.skill.phase = 2;
+          state.skill.pos = { x: tx, y: ty };
+          state.skill.timer = Date.now();
+          setTimeout(() => (state.flags.acting = false), 300);
+        },
+        ult: () => {
+          if (state.isSwitchedOut) return;
+          if (state.ult.cd > 0) return;
+          let enh = false;
+          if (state.stats.st >= 3) {
+            state.stats.st = 0;
+            state.stats.en = 0;
+            enh = true;
+            ui.text(state.p.x, state.p.y - 50, "-3 Stacks (강화)", "red");
+          }
+          // 25초 지속 (60frame * 25)
+          ui.spawnZone("ult", state.p.x, state.p.y, 1000, 1500, enh);
+
+          let t = hit.getClosest();
+          if (t && Math.hypot(t.x - state.p.x, t.y - state.p.y) < 20 * METER) {
+            ui.text(t.x, t.y, "2m 폭발!", "#ff3333");
+            ui.spawnOneShot("ult-burst-zone", t.x, t.y, 0);
+          } else {
+            ui.spawnOneShot("ult-burst-zone", state.p.x, state.p.y, 0);
+          }
+
+          combat.hitCheck(state.p.x, state.p.y, 1000, "쾅!", false, 0);
+          combat.gain(0, 20);
+          // 쿨타임은 game.loop에서 존이 사라질 때 설정
+        },
+        outro: () => {
+          if (state.isSwitchedOut || state.stats.concerto < 100) return;
+          state.isSwitchedOut = true;
+          state.stats.concerto = 0;
+          state.outroBuffTime = 14000;
+          const playerPos = document.getElementById("player-pos");
+          if (playerPos) playerPos.classList.add("switched-out");
+          ui.text(state.p.x, state.p.y, "반주 발동!", "#ffd700");
+        },
+        intro: () => {
+          if (!state.isSwitchedOut) {
+            let t = hit.getClosest();
+            if (t) {
+              combat.performIntro(t.x, t.y);
             }
           } else {
-            if (dist > CONFIG.aaRange + 60) {
-              const ang = Math.atan2(
-                game.player.y - boss.y,
-                game.player.x - boss.x
-              );
-              boss.x += Math.cos(ang) * CONFIG.bossSpeed;
-              boss.y += Math.sin(ang) * CONFIG.bossSpeed;
+            state.isSwitchedOut = false;
+            const playerPos = document.getElementById("player-pos");
+            if (playerPos) playerPos.classList.remove("switched-out");
+            let t = hit.getClosest();
+            if (t) combat.performIntro(t.x, t.y);
+            else {
+              ui.text(state.p.x, state.p.y, "변주 발동!", "#00e5ff");
+              state.introAnim = {
+                active: true,
+                sx: state.p.x,
+                sy: state.p.y,
+                ex: state.p.x,
+                ey: state.p.y,
+                startTime: Date.now(),
+                duration: 250,
+                hitTriggered: false,
+              };
             }
-            if (boss.state !== "ATTACK") boss.state = "GAP";
           }
-        }
-      }
-
-      function startSkill(name, d) {
-        game.boss.state = name;
-        game.actionTimer = d;
-        if (name === "CAST_BOLT") game.sequenceStep = 1;
-        else game.sequenceStep = 3;
-      }
-
-      function applyHit(type) {
-        const { player } = game;
-        let rawDmg = 0,
-          dmgType = "PHYSICAL",
-          stackAmt = 0;
-
-        if (type === "AA") {
-          rawDmg = CONFIG.bossAD + player.currentHp * 0.03;
-          stackAmt = parseInt(ui.stackAA.value);
-        } else if (type === "BOLT") {
-          rawDmg = player.currentHp * 0.04;
-          dmgType = "MAGIC";
-          stackAmt = parseInt(ui.stackBolt.value);
-        } else if (type === "RING") {
-          rawDmg = player.currentHp * 0.1;
-          dmgType = "MAGIC";
-          stackAmt = parseInt(ui.stackRing.value);
-        } else if (type === "AURA") {
-          stackAmt = parseInt(ui.stackAura.value);
-        }
-
-        const effAr = Math.max(0, player.baseAr - player.stacks);
-        const effMr = Math.max(0, player.baseMr - player.stacks);
-
-        let finalDmg = 0;
-        if (rawDmg > 0) {
-          let mitigation =
-            dmgType === "PHYSICAL" ? 100 / (100 + effAr) : 100 / (100 + effMr);
-          finalDmg = rawDmg * mitigation;
-          player.currentHp = Math.max(0, player.currentHp - finalDmg);
-        }
-
-        if (stackAmt > 0) {
-          player.stacks = Math.min(50, player.stacks + stackAmt);
-          player.stackDropTimer = 4000;
-        }
-
-        if (finalDmg > 0)
-          addText(
-            player.x,
-            player.y - 30,
-            `-${Math.floor(finalDmg)}`,
-            dmgType === "PHYSICAL" ? "#ff8a65" : "#b388ff"
-          );
-        if (stackAmt > 0)
-          addText(player.x, player.y - 50, `약화 +${stackAmt}`, "#ff5252");
-      }
-
-      function fireBolt(angle) {
-        game.projectiles.push({
-          x: game.boss.x,
-          y: game.boss.y,
-          vx: Math.cos(angle) * 10,
-          vy: Math.sin(angle) * 10,
-          r: 50,
-          life: 2000,
-        });
-      }
-      function spawnRings() {
-        for (let i = 0; i < 8; i++) {
-          game.rings.push({
-            x: game.boss.x,
-            y: game.boss.y,
-            r: 900 - i * 100,
-            width: 150,
-            state: "WARN",
-            timer: i * 340,
-            warnTime: 500,
-            activeTime: 200,
-            hit: false,
+        },
+        performIntro: (tx, ty) => {
+          const ang = Math.atan2(ty - state.p.y, tx - state.p.x);
+          state.p.x = tx - Math.cos(ang) * 3 * METER;
+          state.p.y = ty - Math.sin(ang) * 3 * METER;
+          state.p.rot = ang;
+          state.flags.acting = true;
+          state.flags.jump = true;
+          ui.text(state.p.x, state.p.y, "변주!", "#00e5ff");
+          combat.gain(0, 10);
+          state.introAnim = {
+            active: true,
+            sx: state.p.x,
+            sy: state.p.y,
+            ex: state.p.x + Math.cos(ang) * METER,
+            ey: state.p.y + Math.sin(ang) * METER,
+            startTime: Date.now(),
+            duration: 250,
+            hitTriggered: false,
+          };
+        },
+        checkIntroHit: () => {
+          const range = 5 * METER,
+            fanAngleHalf = (120 * Math.PI) / 180 / 2;
+          let hitAny = false;
+          state.enemies.forEach((e) => {
+            const d = Math.hypot(e.x - state.p.x, e.y - state.p.y);
+            if (d <= range) {
+              const eAng = Math.atan2(e.y - state.p.y, e.x - state.p.x);
+              let diff = Math.abs(eAng - state.p.rot);
+              if (diff > Math.PI) diff = 2 * Math.PI - diff;
+              if (diff <= fanAngleHalf) {
+                ui.text(e.x, e.y, "넉백!");
+                combat.knockback(e, 250);
+                hitAny = true;
+              }
+            }
           });
-        }
-      }
-
-      function updateObjects(dt) {
-        game.projectiles = game.projectiles.filter((p) => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= dt;
-          if (
-            Math.hypot(p.x - game.player.x, p.y - game.player.y) <
-            p.r + game.player.r
-          ) {
-            applyHit("BOLT");
-            return false;
+          if (hitAny) combat.gain(50, 0);
+        },
+        aerial: () => {
+          if (state.timer) {
+            clearTimeout(state.timer);
+            state.timer = null;
           }
-          return p.life > 0;
-        });
-        game.rings = game.rings.filter((r) => {
-          if (r.state === "WARN") {
-            r.timer -= dt;
-            if (r.timer <= 0) r.state = "PREP";
-          } else if (r.state === "PREP") {
-            r.warnTime -= dt;
-            if (r.warnTime <= 0) r.state = "ACTIVE";
-          } else if (r.state === "ACTIVE") {
-            r.activeTime -= dt;
-            if (
-              !r.hit &&
-              Math.abs(
-                Math.hypot(game.player.x - r.x, game.player.y - r.y) - r.r
-              ) <
-                r.width / 2
-            ) {
-              applyHit("RING");
-              r.hit = true;
+
+          state.flags.acting = true;
+          state.flags.gliding = false;
+
+          for (let i = -1; i <= 1; i++) {
+            ui.spawnProjectile(state.p.x, state.p.y, state.p.rot + i * 0.2, 60);
+          }
+
+          combat.boxHit(4, 8, false, 30, 10);
+
+          setTimeout(() => {
+            state.flags.acting = false;
+            state.flags.jump = false;
+          }, 300);
+        },
+        jump: () => (state.flags.jump = !state.flags.jump),
+        findTargetInBox: (wM, lM, originX, originY, rot) => {
+          const targets = combat.getEnemiesInBox(wM, lM, originX, originY, rot);
+          if (targets.length === 0) return null;
+          let closest = null,
+            minD = Infinity;
+          targets.forEach((e) => {
+            const d = Math.hypot(e.x - originX, e.y - originY);
+            if (d < minD) {
+              minD = d;
+              closest = e;
+            }
+          });
+          return closest;
+        },
+        getEnemiesInBox: (wM, lM, originX, originY, rot) => {
+          const hits = [],
+            w = wM * METER,
+            l = lM * METER;
+          const px = originX !== undefined ? originX : state.p.x;
+          const py = originY !== undefined ? originY : state.p.y;
+          const prot = rot !== undefined ? rot : state.p.rot;
+          const cos = Math.cos(-prot),
+            sin = Math.sin(-prot);
+          state.enemies.forEach((e) => {
+            const dx = e.x - px,
+              dy = e.y - py;
+            const lx = dx * cos - dy * sin,
+              ly = dx * sin + dy * cos;
+            if (lx >= 0 && lx <= l && Math.abs(ly) <= w / 2) hits.push(e);
+          });
+          return hits;
+        },
+        boxHit: (wM, lM, knock, en, concertoGain = 0) => {
+          const hits = combat.getEnemiesInBox(wM, lM);
+          if (hits.length > 0) {
+            hits.forEach((e) => {
+              ui.text(e.x, e.y, "HIT!");
+              if (knock) combat.knockback(e, 200);
+            });
+            combat.gain(en, concertoGain);
+          }
+        },
+        hitCheck: (x, y, r, txt, knock, en, concertoGain = 0) => {
+          let hitAny = false;
+          state.enemies.forEach((e) => {
+            if (Math.hypot(e.x - x, e.y - y) < r) {
+              ui.text(e.x, e.y, txt);
+              hitAny = true;
+              if (knock) combat.knockback(e, 100);
+            }
+          });
+          if (hitAny) combat.gain(en, concertoGain);
+        },
+        gain: (v, c = 0) => {
+          state.stats.concerto = Math.min(state.stats.concerto + c, 100);
+          if (state.stats.st >= 3) return;
+          state.stats.en += v;
+          while (state.stats.en >= 50 && state.stats.st < 3) {
+            state.stats.en -= 50;
+            state.stats.st++;
+            ui.text(state.p.x, state.p.y - 50, "깃털 획득", "yellow");
+          }
+          if (state.stats.st >= 3) state.stats.en = 0;
+        },
+        knockback: (e, f) => {
+          const a = Math.atan2(e.y - state.p.y, e.x - state.p.x);
+          e.x += Math.cos(a) * f;
+          e.y += Math.sin(a) * f;
+          const v = document.getElementById("game-view");
+          e.x = Math.max(30, Math.min(v.clientWidth - 30, e.x));
+          e.y = Math.max(30, Math.min(v.clientHeight - 30, e.y));
+        },
+      };
+
+      const hit = {
+        getClosest: () => {
+          let t = null,
+            d = Infinity;
+          state.enemies.forEach((e) => {
+            const dist = Math.hypot(e.x - state.p.x, e.y - state.p.y);
+            if (dist < d) {
+              d = dist;
+              t = e;
+            }
+          });
+          return t;
+        },
+      };
+
+      const ui = {
+        render: () => {
+          const pos = document.getElementById("player-pos");
+          pos.style.left = state.p.x + "px";
+          pos.style.top = state.p.y + "px";
+          const rot = document.getElementById("player-rot");
+          rot.style.transform = `rotate(${
+            (state.p.rot * 180) / Math.PI + 90
+          }deg)`;
+          const body = document.getElementById("player-body");
+          body.style.transform = state.flags.jump
+            ? "translate(-50%, -50%) scale(1.3)"
+            : "translate(-50%, -50%) scale(1)";
+          body.style.borderColor = state.flags.jump
+            ? "yellow"
+            : state.isSwitchedOut
+            ? "#aaa"
+            : "#fff";
+          state.enemies.forEach((e) => {
+            e.el.style.left = e.x + "px";
+            e.el.style.top = e.y + "px";
+            e.el.classList.remove("targeted");
+          });
+
+          const buffEl = document.getElementById("buff-display");
+          if (state.isSwitchedOut && state.outroBuffTime > 0) {
+            let buffMsg = `[반주] 기류 피해 +10% | 공명 해방 피해 +25% (${(
+              state.outroBuffTime / 1000
+            ).toFixed(1)}s)`;
+            let synergy = false;
+            state.effects.forEach((fx) => {
+              if (
+                fx.type === "ult" &&
+                fx.enh &&
+                Math.hypot(state.p.x - fx.x, state.p.y - fx.y) < fx.r
+              ) {
+                synergy = true;
+              }
+            });
+            if (synergy) buffMsg += "\n[궁극기] 기류 피해 +10%";
+            buffEl.innerText = buffMsg;
+            buffEl.style.display = "block";
+          } else {
+            buffEl.style.display = "none";
+          }
+
+          const rangeBox = document.getElementById("guide-box");
+          if (rangeBox.style.display === "block") {
+            rangeBox.style.transform = `rotate(0deg)`;
+            rangeBox.style.left = state.p.x + "px";
+            rangeBox.style.top = state.p.y + "px";
+          }
+        },
+        spawnOneShot: (cls, x, y, rot) => {
+          const el = document.createElement("div");
+          el.className = "vfx " + cls;
+          el.style.left = x + "px";
+          el.style.top = y + "px";
+          if (cls === "intro-fan") el.style.setProperty("--rot", rot + "rad");
+
+          if (cls !== "ult-burst-zone") {
+            el.style.transform = `translate(-50%, -50%) rotate(${rot}rad)`;
+          } else {
+            el.style.transform = `translate(-50%, -50%)`;
+          }
+
+          document.getElementById("game-view").appendChild(el);
+          setTimeout(() => el.remove(), 500);
+        },
+        spawnZone: (type, x, y, r, life, enh = false) => {
+          const el = document.createElement("div");
+          el.className =
+            type === "storm"
+              ? "vfx storm-zone"
+              : enh
+              ? "vfx ult-zone enhanced"
+              : "vfx ult-zone";
+          el.style.width = r * 2 + "px";
+          el.style.height = r * 2 + "px";
+          el.style.left = x + "px";
+          el.style.top = y + "px";
+          state.effects.push({ type, x, y, r, life, el, enh });
+          document.getElementById("game-view").appendChild(el);
+        },
+        spawnProjectile: (x, y, rot, life = 30) => {
+          const el = document.createElement("div");
+          el.className = "vfx wind-blade";
+          el.style.left = x + "px";
+          el.style.top = y + "px";
+          el.style.transform = `translate(-50%, -50%) rotate(${rot}rad)`;
+          state.effects.push({
+            type: "projectile",
+            x,
+            y,
+            vx: Math.cos(rot) * 12,
+            vy: Math.sin(rot) * 12,
+            life: life,
+            el,
+          });
+          document.getElementById("game-view").appendChild(el);
+        },
+        text: (x, y, t, c = "#fff") => {
+          const el = document.createElement("div");
+          el.className = "dmg-text";
+          el.innerText = t;
+          el.style.color = c;
+          el.style.left = x + "px";
+          el.style.top = y + "px";
+          document.getElementById("game-view").appendChild(el);
+          setTimeout(() => el.remove(), 800);
+        },
+        update: () => {
+          const pt = state.stats.st * 50 + state.stats.en;
+          const ptTxt = document.getElementById("pt-txt");
+          const gaugeFill = document.getElementById("gauge-fill");
+          if (ptTxt) ptTxt.innerText = pt + "/150";
+          if (gaugeFill) gaugeFill.style.width = (pt / 150) * 100 + "%";
+
+          const concertoTxt = document.getElementById("concerto-txt");
+          const concertoFill = document.getElementById("concerto-fill");
+          if (concertoTxt)
+            concertoTxt.innerText = Math.floor(state.stats.concerto) + "/100";
+          if (concertoFill)
+            concertoFill.style.width = state.stats.concerto + "%";
+
+          for (let i = 1; i <= 3; i++) {
+            const f = document.getElementById("f" + i);
+            if (f) f.className = i <= state.stats.st ? "feather on" : "feather";
+          }
+          const sBtn = document.getElementById("btn-skill"),
+            sTxt = document.getElementById("txt-skill");
+          if (sBtn && sTxt) {
+            // UI 표시 로직 수정: 강화 상태이거나(이미 1차에서 소모함), 1차 상태인데 깃털이 1개 이상이면 노란 불
+            if (state.skill.enhanced || (state.skill.phase === 1 && state.stats.st >= 1)) {
+                sBtn.classList.add("btn-enh");
+            } else {
+                sBtn.classList.remove("btn-enh");
+            }
+
+            if (state.skill.phase === 2 && state.skill.enhanced) {
+              sTxt.innerHTML =
+                "⭐ 낙풍 (강화) [E]<br> <span class='desc'>하강 기류로 적을 타격합니다. (강화됨)</span>";
+            } else if (state.skill.phase === 2) {
+              sTxt.innerHTML =
+                "칼날 폭풍 [E]<br> <span class='desc'>바람 칼날로 적을 베어 피해를 줍니다.</span>";
+            } else {
+              sTxt.innerHTML = "전방에 폭풍을 생성하여 적을 견인합니다.";
             }
           }
-          return r.activeTime > 0;
-        });
-        game.texts = game.texts.filter((t) => {
-          t.y -= 0.5;
-          t.life--;
-          return t.life > 0;
-        });
-        game.particles = game.particles.filter((p) => {
-          p.life--;
-          return p.life > 0;
-        });
-      }
+          const uBtn = document.getElementById("btn-ult"),
+            uTxt = document.getElementById("txt-ult");
+          if (uBtn && uTxt) {
+            if (state.stats.st >= 3) {
+              uTxt.innerHTML =
+                "⭐ 강화 해방 [R]<br> <span class='desc'>3스택 소모하여 파티원의 기류 피해를 부스트합니다.</span>";
+              uBtn.classList.add("btn-enh");
+            } else {
+              uTxt.innerHTML =
+                "광범위한 폭류 영역을 전개하여 지속 피해를 입힙니다.";
+              uBtn.classList.remove("btn-enh");
+            }
+          }
+          const cdSkill = document.getElementById("cd-skill");
+          const cdUlt = document.getElementById("cd-ult");
+          if (cdSkill)
+            cdSkill.style.width = (state.skill.cd / (12 * 60)) * 100 + "%";
+          if (cdUlt) cdUlt.style.width = (state.ult.cd / (25 * 60)) * 100 + "%";
 
-      function addText(x, y, text, color) {
-        game.texts.push({ x, y, text, color, life: 60 });
-      }
-      function spawnParticle(x, y, color, count) {
-        for (let i = 0; i < count; i++)
-          game.particles.push({ x, y, color, life: 30 });
-      }
+          const oBtn = document.getElementById("btn-outro");
+          if (oBtn) {
+            if (state.stats.concerto >= 100 && !state.isSwitchedOut)
+              oBtn.style.opacity = "1";
+            else oBtn.style.opacity = "0.5";
+          }
+        },
+        guide: (type, w, l, off = 0) => {
+          ui.noguide();
+          let el = document.getElementById("guide-" + type);
+          if (type === "box") {
+            el.style.width = w * METER + "px";
+            el.style.height = l * METER + "px";
+          } else if (type === "circle") {
+            el.style.width = w * METER * 2 + "px";
+            el.style.height = w * METER * 2 + "px";
+            el.style.bottom = (off - w) * METER + "px";
+          }
+          if (el) el.style.display = "block";
+        },
+        noguide: () =>
+          document
+            .querySelectorAll(".range-guide")
+            .forEach((e) => (e.style.display = "none")),
+      };
 
-      function render() {
-        ctx.fillStyle = "#0f0f0f";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(0.6, 0.6);
-
-        ctx.strokeStyle = "#222";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let i = -2000; i <= 2000; i += 200) {
-          ctx.moveTo(i, -2000);
-          ctx.lineTo(i, 2000);
+      window.onload = () => {
+        const gameView = document.getElementById("game-view");
+        const guideBox = document.getElementById("guide-box");
+        const playerRot = document.getElementById("player-rot");
+        if (guideBox && guideBox.parentElement !== playerRot) {
+          playerRot.appendChild(guideBox);
+          guideBox.style.transform = "translateX(-50%)";
+          guideBox.style.bottom = "0";
+          guideBox.style.transformOrigin = "bottom center";
+          guideBox.style.left = "0";
+          guideBox.style.top = "auto";
         }
-        for (let i = -2000; i <= 2000; i += 200) {
-          ctx.moveTo(-2000, i);
-          ctx.lineTo(2000, i);
-        }
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(
-          game.boss.homeX,
-          game.boss.homeY,
-          CONFIG.homeRadius,
-          0,
-          Math.PI * 2
-        );
-        ctx.strokeStyle = "#2e7d32";
-        ctx.lineWidth = 4;
-        ctx.setLineDash([10, 10]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        if (game.isAggro) {
-          ctx.beginPath();
-          ctx.arc(game.boss.x, game.boss.y, CONFIG.auraRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(156, 39, 176, 0.3)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-
-        game.rings.forEach((r) => {
-          if (r.state === "WARN") return;
-          ctx.beginPath();
-          ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
-          ctx.lineWidth = r.width;
-          ctx.strokeStyle =
-            r.state === "PREP"
-              ? "rgba(234, 128, 252, 0.2)"
-              : "rgba(255, 0, 0, 0.6)";
-          ctx.stroke();
-        });
-
-        ctx.fillStyle = "#b388ff";
-        game.projectiles.forEach((p) => {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        ctx.beginPath();
-        ctx.arc(game.boss.x, game.boss.y, game.boss.r, 0, Math.PI * 2);
-        ctx.fillStyle = game.boss.state === "RESET" ? "#555" : game.boss.color;
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "#fff";
-        ctx.stroke();
-
-        // 아타칸 평타 사거리 표시 (보스 반경 60 고려)
-        ctx.beginPath();
-        ctx.arc(game.boss.x, game.boss.y, CONFIG.aaRange + 60, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(255, 87, 34, 0.7)";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 8]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.beginPath();
-        ctx.arc(game.player.x, game.player.y, game.player.r, 0, Math.PI * 2);
-        ctx.fillStyle = game.player.color;
-        ctx.fill();
-
-        game.particles.forEach((p) => {
-          ctx.fillStyle = p.color;
-          ctx.fillRect(p.x, p.y, 6, 6);
-        });
-        ctx.font = "bold 24px Arial";
-        ctx.textAlign = "center";
-        game.texts.forEach((t) => {
-          ctx.fillStyle = t.color;
-          ctx.fillText(t.text, t.x, t.y);
-        });
-
-        ctx.restore();
-      }
-
-      function updateUI() {
-        const t = game.combatTime;
-        ui.timer.innerText = `${Math.floor(t / 60000)
-          .toString()
-          .padStart(2, "0")}:${Math.floor((t % 60000) / 1000)
-          .toString()
-          .padStart(2, "0")}.${Math.floor((t % 1000) / 100)}`;
-        ui.dispHp.innerText =
-          Math.floor(game.player.currentHp) + " / " + game.player.baseHp;
-
-        const effAr = Math.max(0, game.player.baseAr - game.player.stacks);
-        const effMr = Math.max(0, game.player.baseMr - game.player.stacks);
-        ui.dispDef.innerText = `${effAr} / ${effMr}`;
-        ui.dispStack.innerText = game.player.stacks;
-
-        ui.bossState.innerText = game.boss.state;
-        if (game.boss.state.startsWith("CAST"))
-          ui.bossAction.innerText = "스킬 시전 중...";
-        else if (game.boss.state === "GAP")
-          ui.bossAction.innerText = "틈 (평타/추격)";
-        else ui.bossAction.innerText = "-";
-
-        ui.patienceBar.style.width =
-          (game.boss.patience / CONFIG.maxPatience) * 100 + "%";
-
-        let max = 1;
-        if (game.boss.state === "CAST_BOLT") max = CONFIG.boltCastTime;
-        else if (game.boss.state === "CAST_RING") max = CONFIG.ringCastTime;
-        else if (game.boss.state === "GAP") {
-          if (game.sequenceStep === 0) max = CONFIG.gapInitial;
-          else if (game.sequenceStep === 2) max = CONFIG.gapAfterBolt;
-          else if (game.sequenceStep === 4) max = CONFIG.gapAfterRing;
-        }
-        ui.actionBar.style.width = (game.actionTimer / max) * 100 + "%";
-      }
-
-      window.addEventListener("keydown", (e) => {
-        if (["ArrowUp", "KeyW"].includes(e.code)) keys.up = true;
-        if (["ArrowDown", "KeyS"].includes(e.code)) keys.down = true;
-        if (["ArrowLeft", "KeyA"].includes(e.code)) keys.left = true;
-        if (["ArrowRight", "KeyD"].includes(e.code)) keys.right = true;
-        if (e.code === "Space") keys.space = true;
-      });
-      window.addEventListener("keyup", (e) => {
-        if (["ArrowUp", "KeyW"].includes(e.code)) keys.up = false;
-        if (["ArrowDown", "KeyS"].includes(e.code)) keys.down = false;
-        if (["ArrowLeft", "KeyA"].includes(e.code)) keys.left = false;
-        if (["ArrowRight", "KeyD"].includes(e.code)) keys.right = false;
-        if (e.code === "Space") keys.space = false;
-      });
-
-      document.getElementById("start-btn").addEventListener("click", () => {
-        document.getElementById("start-screen").style.display = "none";
-        init();
-        game.running = true;
-        game.lastTime = performance.now();
-        requestAnimationFrame(loop);
-        canvas.focus();
-      });
-      canvas.addEventListener("mousedown", () => canvas.focus());
-      window.addEventListener("resize", init);
+        game.init();
+      };
     </script>
   </body>
 </html>
