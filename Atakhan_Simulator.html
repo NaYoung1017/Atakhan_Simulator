@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>아타칸 전투 시뮬레이터 V3.5 (Final Size)</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #0f0f0f;
+        color: #eee;
+        font-family: "Malgun Gothic", sans-serif;
+        user-select: none;
+      }
+
+      #game-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+      canvas {
+        display: block;
+        background: #1a1a1d;
+        outline: none;
+      }
+
+      /* 타이머 */
+      #timer-display {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 32px;
+        font-weight: bold;
+        color: #ffd700;
+        text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      /* 좌측 패널 */
+      #ui-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 320px;
+        background: rgba(18, 18, 18, 0.95);
+        border-right: 2px solid #333;
+        padding: 20px;
+        overflow-y: auto;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+        z-index: 30;
+      }
+
+      #ui-panel::-webkit-scrollbar {
+        width: 6px;
+      }
+      #ui-panel::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 3px;
+      }
+
+      .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #ff5252;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #444;
+        text-transform: uppercase;
+      }
+      .section-title:first-child {
+        margin-top: 0;
+      }
+
+      .ui-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: #ccc;
+      }
+      .ui-desc {
+        font-size: 11px;
+        color: #888;
+        margin-bottom: 10px;
+        line-height: 1.4;
+      }
+
+      input[type="number"] {
+        width: 60px;
+        background: #333;
+        border: 1px solid #555;
+        color: white;
+        padding: 4px;
+        border-radius: 4px;
+        text-align: right;
+      }
+      input[type="number"]:focus {
+        border-color: #29b6f6;
+        outline: none;
+      }
+
+      .stat-value {
+        font-weight: bold;
+        color: #fff;
+      }
+
+      .pattern-box {
+        background: #222;
+        border: 1px solid #444;
+        padding: 10px;
+        border-radius: 6px;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .bar-bg {
+        width: 100%;
+        height: 6px;
+        background: #444;
+        margin-top: 5px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        width: 0%;
+        transition: width 0.1s linear;
+      }
+
+      #start-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      button {
+        background: #d32f2f;
+        color: white;
+        border: none;
+        padding: 15px 50px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 8px;
+        margin-top: 30px;
+        box-shadow: 0 0 20px rgba(211, 47, 47, 0.5);
+      }
+      button:hover {
+        background: #b71c1c;
+        transform: scale(1.05);
+      }
+
+      #controls-hint {
+        position: absolute;
+        bottom: 20px;
+        left: 340px;
+        right: 20px;
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <canvas id="canvas" tabindex="1"></canvas>
+
+      <div id="timer-display">00:00.0</div>
+
+      <div id="ui-panel">
+        <div class="section-title">챔피언 설정 (Stats)</div>
+        <div class="ui-row">
+          <span>기본 체력 (HP)</span>
+          <input type="number" id="inp-hp" value="3500" step="100" />
+        </div>
+        <div class="ui-row">
+          <span>기본 방어력 (AR)</span>
+          <input type="number" id="inp-ar" value="100" />
+        </div>
+        <div class="ui-row">
+          <span>기본 마법저항 (MR)</span>
+          <input type="number" id="inp-mr" value="70" />
+        </div>
+
+        <div class="section-title" style="color: #29b6f6">
+          실시간 상태 (Live)
+        </div>
+        <div class="ui-row">
+          <span>현재 체력</span>
+          <span id="disp-hp" class="stat-value">3500</span>
+        </div>
+        <div class="ui-row">
+          <span>실제 방어/마저</span>
+          <span id="disp-def" class="stat-value">100 / 70</span>
+        </div>
+        <div class="ui-row">
+          <span>약화 스택 (Max 50)</span>
+          <span id="disp-stack" class="stat-value" style="color: #ff5252"
+            >0</span
+          >
+        </div>
+        <div class="ui-desc">
+          * 약화: 중첩당 방/마저 -1<br />
+          *
+          <strong style="color: #ff5252"
+            >4초간 미피격 시 모든 스택 초기화</strong
+          >
+        </div>
+
+        <div class="section-title">아타칸 스킬 정보</div>
+
+        <div class="ui-row">
+          <span style="color: #ff8a65">⚔️ 기본 공격</span>
+          <span
+            >부여 스택:
+            <input type="number" id="stack-aa" value="2" style="width: 30px"
+          /></span>
+        </div>
+        <div class="ui-desc">
+          100% AD + 현재 체력 3% 물리 피해.<br />
+          사거리 150 (붉은 점선 표시).
+        </div>
+
+        <div class="ui-row">
+          <span style="color: #b388ff">🔮 암흑 탄환</span>
+          <span
+            >부여 스택:
+            <input type="number" id="stack-bolt" value="5" style="width: 30px"
+          /></span>
+        </div>
+        <div class="ui-desc">
+          현재 체력 4% 마법 피해.<br />
+          궤도 고정 4연발 사격.
+        </div>
+
+        <div class="ui-row">
+          <span style="color: #ea80fc">⭕ 고통의 고리</span>
+          <span
+            >부여 스택:
+            <input type="number" id="stack-ring" value="5" style="width: 30px"
+          /></span>
+        </div>
+        <div class="ui-desc">
+          현재 체력 10% 마법 피해.<br />
+          8개의 고리가 순차적으로 조여옴.
+        </div>
+
+        <div class="ui-row">
+          <span style="color: #9c27b0">🟣 어둠의 오라</span>
+          <span
+            >부여 스택:
+            <input type="number" id="stack-aura" value="1" style="width: 30px"
+          /></span>
+        </div>
+        <div class="ui-desc">
+          데미지 없음 (스택만 부여).<br />
+          2.75초마다 무조건 발동.
+        </div>
+
+        <div class="section-title">패턴 모니터 (Timing)</div>
+        <div class="pattern-box">
+          <div
+            id="boss-state-text"
+            style="font-weight: bold; margin-bottom: 5px"
+          >
+            IDLE
+          </div>
+          <div id="boss-action-text" style="font-size: 12px; color: #aaa">
+            대기 중
+          </div>
+          <div class="bar-bg">
+            <div
+              class="bar-fill"
+              id="action-bar"
+              style="background: #ffd700"
+            ></div>
+          </div>
+        </div>
+        <div class="ui-row">
+          <span>인내심 (리셋)</span>
+          <div class="bar-bg" style="width: 100px">
+            <div
+              class="bar-fill"
+              id="patience-bar"
+              style="background: #ef5350; width: 100%"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="start-screen">
+        <h1
+          style="
+            color: #d32f2f;
+            font-size: 50px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px red;
+          "
+        >
+          ATAKHAN SIMULATOR V3.5
+        </h1>
+        <p style="color: #bbb; font-size: 18px">
+          아타칸 근처에서 [SPACE] 입력 시 전투가 시작됩니다.
+        </p>
+        <button id="start-btn">시작하기</button>
+      </div>
+
+      <div id="controls-hint">
+        🎮 [WASD] 이동 &nbsp;|&nbsp; ⚔️ [SPACE] 전투 시작 &nbsp;|&nbsp; 🖱️
+        [CLICK] 포커스
+      </div>
+    </div>
+
+    <script>
+      /**
+       * 아타칸 전투 시뮬레이터 V3.5 (Final Size)
+       * - 플레이어 크기 축소 (35)
+       * - 아타칸 크기 확대 (60)
+       */
+
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const CONFIG = {
+        playerSpeed: 3.2,
+        bossSpeed: 3.0,
+        homeRadius: 800,
+        triggerRadius: 250,
+        aaRange: 150,
+        auraRadius: 600,
+        bossAD: 140,
+        bossAS: 0.75,
+        boltCastTime: 1750,
+        ringCastTime: 2750,
+        auraInterval: 2750,
+        maxPatience: 5000,
+        gapInitial: 2000,
+        gapAfterBolt: 6000,
+        gapAfterRing: 1300,
+      };
+
+      const game = {
+        running: false,
+        lastTime: 0,
+        combatTime: 0,
+        player: {
+          x: 0,
+          y: 0,
+          r: 35, // 반경 35 (지름 70) - 작아짐
+          color: "#29b6f6",
+          baseHp: 3500,
+          currentHp: 3500,
+          baseAr: 100,
+          baseMr: 70,
+          stacks: 0,
+          stackDropTimer: 0,
+        },
+        boss: {
+          x: 0,
+          y: 0,
+          r: 60, // 반경 60 (지름 120) - 커짐
+          color: "#d32f2f",
+          homeX: 0,
+          homeY: 0,
+          state: "IDLE",
+          patience: CONFIG.maxPatience,
+          aaCooldownTimer: 0,
+          targetAngle: 0,
+        },
+        isAggro: false,
+        auraTimer: 0,
+        sequenceStep: 0,
+        actionTimer: 0,
+        boltCount: 0,
+        projectiles: [],
+        rings: [],
+        particles: [],
+        texts: [],
+      };
+
+      const keys = {
+        up: false,
+        down: false,
+        left: false,
+        right: false,
+        space: false,
+      };
+
+      const ui = {
+        inpHp: document.getElementById("inp-hp"),
+        inpAr: document.getElementById("inp-ar"),
+        inpMr: document.getElementById("inp-mr"),
+        stackAA: document.getElementById("stack-aa"),
+        stackBolt: document.getElementById("stack-bolt"),
+        stackRing: document.getElementById("stack-ring"),
+        stackAura: document.getElementById("stack-aura"),
+        dispHp: document.getElementById("disp-hp"),
+        dispDef: document.getElementById("disp-def"),
+        dispStack: document.getElementById("disp-stack"),
+        timer: document.getElementById("timer-display"),
+        bossState: document.getElementById("boss-state-text"),
+        bossAction: document.getElementById("boss-action-text"),
+        actionBar: document.getElementById("action-bar"),
+        patienceBar: document.getElementById("patience-bar"),
+      };
+
+      function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        game.boss.x = 0;
+        game.boss.y = 0;
+        resetPlayer();
+        game.player.y = 400;
+      }
+
+      function resetPlayer() {
+        game.player.baseHp = parseFloat(ui.inpHp.value) || 3500;
+        game.player.baseAr = parseFloat(ui.inpAr.value) || 100;
+        game.player.baseMr = parseFloat(ui.inpMr.value) || 70;
+        game.player.currentHp = game.player.baseHp;
+        game.player.stacks = 0;
+        game.player.stackDropTimer = 0;
+      }
+
+      function loop(timestamp) {
+        if (!game.running) return;
+        const dt = timestamp - game.lastTime;
+        game.lastTime = timestamp;
+        update(dt);
+        render();
+        updateUI();
+        requestAnimationFrame(loop);
+      }
+
+      function update(dt) {
+        const { player, boss } = game;
+
+        let dx = 0,
+          dy = 0;
+        if (keys.up) dy -= 1;
+        if (keys.down) dy += 1;
+        if (keys.left) dx -= 1;
+        if (keys.right) dx += 1;
+        if (dx !== 0 || dy !== 0) {
+          const len = Math.sqrt(dx * dx + dy * dy);
+          player.x += (dx / len) * CONFIG.playerSpeed;
+          player.y += (dy / len) * CONFIG.playerSpeed;
+        }
+        player.x = Math.max(-1500, Math.min(1500, player.x));
+        player.y = Math.max(-1500, Math.min(1500, player.y));
+
+        if (player.stacks > 0) {
+          player.stackDropTimer -= dt;
+          if (player.stackDropTimer <= 0) player.stacks = 0;
+        }
+
+        if (game.isAggro) game.combatTime += dt;
+
+        const distHome = Math.hypot(boss.x, boss.y);
+        const distPlayer = Math.hypot(player.x - boss.x, player.y - boss.y);
+
+        if (game.isAggro) {
+          if (distHome > CONFIG.homeRadius) {
+            boss.patience -= dt;
+            if (boss.patience <= 0) triggerReset();
+          } else {
+            boss.patience = Math.min(CONFIG.maxPatience, boss.patience + dt);
+          }
+        } else if (
+          boss.state === "IDLE" &&
+          keys.space &&
+          distPlayer <= CONFIG.triggerRadius
+        ) {
+          startCombat();
+        }
+
+        if (boss.state === "RESET") {
+          const ang = Math.atan2(-boss.y, -boss.x);
+          boss.x += Math.cos(ang) * CONFIG.bossSpeed * 3;
+          boss.y += Math.sin(ang) * CONFIG.bossSpeed * 3;
+          if (Math.hypot(boss.x, boss.y) < 10) {
+            boss.state = "IDLE";
+            boss.patience = CONFIG.maxPatience;
+            game.isAggro = false;
+          }
+          return;
+        }
+
+        if (game.isAggro) {
+          updateAura(dt);
+          updateBossPattern(dt, distPlayer);
+        }
+        updateObjects(dt);
+      }
+
+      function triggerReset() {
+        game.isAggro = false;
+        game.boss.state = "RESET";
+        game.combatTime = 0;
+        resetPlayer();
+        game.projectiles = [];
+        game.rings = [];
+        addText(game.boss.x, game.boss.y - 80, "리셋!", "#ef4444");
+      }
+
+      function startCombat() {
+        game.isAggro = true;
+        game.combatTime = 0;
+        game.boss.state = "GAP";
+        game.sequenceStep = 0;
+        game.actionTimer = CONFIG.gapInitial;
+        game.auraTimer = CONFIG.auraInterval;
+        addText(game.boss.x, game.boss.y - 80, "전투 시작!", "#ffd700");
+      }
+
+      function updateAura(dt) {
+        game.auraTimer -= dt;
+        if (game.auraTimer <= 0) {
+          game.auraTimer = CONFIG.auraInterval;
+          spawnParticle(game.boss.x, game.boss.y, "#9c27b0", 20);
+          const dist = Math.hypot(
+            game.player.x - game.boss.x,
+            game.player.y - game.boss.y
+          );
+          if (dist <= CONFIG.auraRadius) applyHit("AURA");
+        }
+      }
+
+      function updateBossPattern(dt, dist) {
+        const { boss } = game;
+        if (boss.aaCooldownTimer > 0) boss.aaCooldownTimer -= dt;
+
+        if (boss.state.startsWith("CAST")) {
+          game.actionTimer -= dt;
+          if (boss.state === "CAST_BOLT") {
+            const elapsed = CONFIG.boltCastTime - game.actionTimer;
+            const shotsNeeded = Math.floor(elapsed / (CONFIG.boltCastTime / 4));
+            if (game.boltCount === 0 && shotsNeeded === 0) {
+              boss.targetAngle = Math.atan2(
+                game.player.y - boss.y,
+                game.player.x - boss.x
+              );
+            }
+            if (shotsNeeded > game.boltCount && shotsNeeded <= 4) {
+              fireBolt(boss.targetAngle);
+              game.boltCount++;
+            }
+          }
+          if (game.actionTimer <= 0) {
+            if (boss.state === "CAST_BOLT") {
+              game.boss.state = "GAP";
+              game.actionTimer = CONFIG.gapAfterBolt;
+              game.sequenceStep = 2;
+            } else if (boss.state === "CAST_RING") {
+              game.boss.state = "GAP";
+              game.actionTimer = CONFIG.gapAfterRing;
+              game.sequenceStep = 4;
+            }
+          }
+          return;
+        }
+
+        if (
+          boss.state === "GAP" ||
+          boss.state === "ATTACK" ||
+          boss.state === "CHASE"
+        ) {
+          game.actionTimer -= dt;
+          if (game.actionTimer <= 0) {
+            if (game.sequenceStep === 0 || game.sequenceStep === 4) {
+              startSkill("CAST_BOLT", CONFIG.boltCastTime);
+              game.boltCount = 0;
+            } else if (game.sequenceStep === 2) {
+              startSkill("CAST_RING", CONFIG.ringCastTime);
+              spawnRings();
+            }
+            return;
+          }
+
+          if (boss.aaCooldownTimer <= 0) {
+            if (dist <= CONFIG.aaRange + 60) {
+              // 사거리 보정 (보스 반경 60)
+              boss.state = "ATTACK";
+              boss.aaCooldownTimer = 1333;
+              applyHit("AA");
+              spawnParticle(game.player.x, game.player.y, "#fff", 15);
+            } else {
+              boss.state = "CHASE";
+              const ang = Math.atan2(
+                game.player.y - boss.y,
+                game.player.x - boss.x
+              );
+              boss.x += Math.cos(ang) * CONFIG.bossSpeed;
+              boss.y += Math.sin(ang) * CONFIG.bossSpeed;
+            }
+          } else {
+            if (dist > CONFIG.aaRange + 60) {
+              const ang = Math.atan2(
+                game.player.y - boss.y,
+                game.player.x - boss.x
+              );
+              boss.x += Math.cos(ang) * CONFIG.bossSpeed;
+              boss.y += Math.sin(ang) * CONFIG.bossSpeed;
+            }
+            if (boss.state !== "ATTACK") boss.state = "GAP";
+          }
+        }
+      }
+
+      function startSkill(name, d) {
+        game.boss.state = name;
+        game.actionTimer = d;
+        if (name === "CAST_BOLT") game.sequenceStep = 1;
+        else game.sequenceStep = 3;
+      }
+
+      function applyHit(type) {
+        const { player } = game;
+        let rawDmg = 0,
+          dmgType = "PHYSICAL",
+          stackAmt = 0;
+
+        if (type === "AA") {
+          rawDmg = CONFIG.bossAD + player.currentHp * 0.03;
+          stackAmt = parseInt(ui.stackAA.value);
+        } else if (type === "BOLT") {
+          rawDmg = player.currentHp * 0.04;
+          dmgType = "MAGIC";
+          stackAmt = parseInt(ui.stackBolt.value);
+        } else if (type === "RING") {
+          rawDmg = player.currentHp * 0.1;
+          dmgType = "MAGIC";
+          stackAmt = parseInt(ui.stackRing.value);
+        } else if (type === "AURA") {
+          stackAmt = parseInt(ui.stackAura.value);
+        }
+
+        const effAr = Math.max(0, player.baseAr - player.stacks);
+        const effMr = Math.max(0, player.baseMr - player.stacks);
+
+        let finalDmg = 0;
+        if (rawDmg > 0) {
+          let mitigation =
+            dmgType === "PHYSICAL" ? 100 / (100 + effAr) : 100 / (100 + effMr);
+          finalDmg = rawDmg * mitigation;
+          player.currentHp = Math.max(0, player.currentHp - finalDmg);
+        }
+
+        if (stackAmt > 0) {
+          player.stacks = Math.min(50, player.stacks + stackAmt);
+          player.stackDropTimer = 4000;
+        }
+
+        if (finalDmg > 0)
+          addText(
+            player.x,
+            player.y - 30,
+            `-${Math.floor(finalDmg)}`,
+            dmgType === "PHYSICAL" ? "#ff8a65" : "#b388ff"
+          );
+        if (stackAmt > 0)
+          addText(player.x, player.y - 50, `약화 +${stackAmt}`, "#ff5252");
+      }
+
+      function fireBolt(angle) {
+        game.projectiles.push({
+          x: game.boss.x,
+          y: game.boss.y,
+          vx: Math.cos(angle) * 10,
+          vy: Math.sin(angle) * 10,
+          r: 50,
+          life: 2000,
+        });
+      }
+      function spawnRings() {
+        for (let i = 0; i < 8; i++) {
+          game.rings.push({
+            x: game.boss.x,
+            y: game.boss.y,
+            r: 900 - i * 100,
+            width: 150,
+            state: "WARN",
+            timer: i * 340,
+            warnTime: 500,
+            activeTime: 200,
+            hit: false,
+          });
+        }
+      }
+
+      function updateObjects(dt) {
+        game.projectiles = game.projectiles.filter((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= dt;
+          if (
+            Math.hypot(p.x - game.player.x, p.y - game.player.y) <
+            p.r + game.player.r
+          ) {
+            applyHit("BOLT");
+            return false;
+          }
+          return p.life > 0;
+        });
+        game.rings = game.rings.filter((r) => {
+          if (r.state === "WARN") {
+            r.timer -= dt;
+            if (r.timer <= 0) r.state = "PREP";
+          } else if (r.state === "PREP") {
+            r.warnTime -= dt;
+            if (r.warnTime <= 0) r.state = "ACTIVE";
+          } else if (r.state === "ACTIVE") {
+            r.activeTime -= dt;
+            if (
+              !r.hit &&
+              Math.abs(
+                Math.hypot(game.player.x - r.x, game.player.y - r.y) - r.r
+              ) <
+                r.width / 2
+            ) {
+              applyHit("RING");
+              r.hit = true;
+            }
+          }
+          return r.activeTime > 0;
+        });
+        game.texts = game.texts.filter((t) => {
+          t.y -= 0.5;
+          t.life--;
+          return t.life > 0;
+        });
+        game.particles = game.particles.filter((p) => {
+          p.life--;
+          return p.life > 0;
+        });
+      }
+
+      function addText(x, y, text, color) {
+        game.texts.push({ x, y, text, color, life: 60 });
+      }
+      function spawnParticle(x, y, color, count) {
+        for (let i = 0; i < count; i++)
+          game.particles.push({ x, y, color, life: 30 });
+      }
+
+      function render() {
+        ctx.fillStyle = "#0f0f0f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(0.6, 0.6);
+
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = -2000; i <= 2000; i += 200) {
+          ctx.moveTo(i, -2000);
+          ctx.lineTo(i, 2000);
+        }
+        for (let i = -2000; i <= 2000; i += 200) {
+          ctx.moveTo(-2000, i);
+          ctx.lineTo(2000, i);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(
+          game.boss.homeX,
+          game.boss.homeY,
+          CONFIG.homeRadius,
+          0,
+          Math.PI * 2
+        );
+        ctx.strokeStyle = "#2e7d32";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([10, 10]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (game.isAggro) {
+          ctx.beginPath();
+          ctx.arc(game.boss.x, game.boss.y, CONFIG.auraRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(156, 39, 176, 0.3)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        game.rings.forEach((r) => {
+          if (r.state === "WARN") return;
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+          ctx.lineWidth = r.width;
+          ctx.strokeStyle =
+            r.state === "PREP"
+              ? "rgba(234, 128, 252, 0.2)"
+              : "rgba(255, 0, 0, 0.6)";
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = "#b388ff";
+        game.projectiles.forEach((p) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.beginPath();
+        ctx.arc(game.boss.x, game.boss.y, game.boss.r, 0, Math.PI * 2);
+        ctx.fillStyle = game.boss.state === "RESET" ? "#555" : game.boss.color;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#fff";
+        ctx.stroke();
+
+        // 아타칸 평타 사거리 표시 (보스 반경 60 고려)
+        ctx.beginPath();
+        ctx.arc(game.boss.x, game.boss.y, CONFIG.aaRange + 60, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 87, 34, 0.7)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.arc(game.player.x, game.player.y, game.player.r, 0, Math.PI * 2);
+        ctx.fillStyle = game.player.color;
+        ctx.fill();
+
+        game.particles.forEach((p) => {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x, p.y, 6, 6);
+        });
+        ctx.font = "bold 24px Arial";
+        ctx.textAlign = "center";
+        game.texts.forEach((t) => {
+          ctx.fillStyle = t.color;
+          ctx.fillText(t.text, t.x, t.y);
+        });
+
+        ctx.restore();
+      }
+
+      function updateUI() {
+        const t = game.combatTime;
+        ui.timer.innerText = `${Math.floor(t / 60000)
+          .toString()
+          .padStart(2, "0")}:${Math.floor((t % 60000) / 1000)
+          .toString()
+          .padStart(2, "0")}.${Math.floor((t % 1000) / 100)}`;
+        ui.dispHp.innerText =
+          Math.floor(game.player.currentHp) + " / " + game.player.baseHp;
+
+        const effAr = Math.max(0, game.player.baseAr - game.player.stacks);
+        const effMr = Math.max(0, game.player.baseMr - game.player.stacks);
+        ui.dispDef.innerText = `${effAr} / ${effMr}`;
+        ui.dispStack.innerText = game.player.stacks;
+
+        ui.bossState.innerText = game.boss.state;
+        if (game.boss.state.startsWith("CAST"))
+          ui.bossAction.innerText = "스킬 시전 중...";
+        else if (game.boss.state === "GAP")
+          ui.bossAction.innerText = "틈 (평타/추격)";
+        else ui.bossAction.innerText = "-";
+
+        ui.patienceBar.style.width =
+          (game.boss.patience / CONFIG.maxPatience) * 100 + "%";
+
+        let max = 1;
+        if (game.boss.state === "CAST_BOLT") max = CONFIG.boltCastTime;
+        else if (game.boss.state === "CAST_RING") max = CONFIG.ringCastTime;
+        else if (game.boss.state === "GAP") {
+          if (game.sequenceStep === 0) max = CONFIG.gapInitial;
+          else if (game.sequenceStep === 2) max = CONFIG.gapAfterBolt;
+          else if (game.sequenceStep === 4) max = CONFIG.gapAfterRing;
+        }
+        ui.actionBar.style.width = (game.actionTimer / max) * 100 + "%";
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowUp", "KeyW"].includes(e.code)) keys.up = true;
+        if (["ArrowDown", "KeyS"].includes(e.code)) keys.down = true;
+        if (["ArrowLeft", "KeyA"].includes(e.code)) keys.left = true;
+        if (["ArrowRight", "KeyD"].includes(e.code)) keys.right = true;
+        if (e.code === "Space") keys.space = true;
+      });
+      window.addEventListener("keyup", (e) => {
+        if (["ArrowUp", "KeyW"].includes(e.code)) keys.up = false;
+        if (["ArrowDown", "KeyS"].includes(e.code)) keys.down = false;
+        if (["ArrowLeft", "KeyA"].includes(e.code)) keys.left = false;
+        if (["ArrowRight", "KeyD"].includes(e.code)) keys.right = false;
+        if (e.code === "Space") keys.space = false;
+      });
+
+      document.getElementById("start-btn").addEventListener("click", () => {
+        document.getElementById("start-screen").style.display = "none";
+        init();
+        game.running = true;
+        game.lastTime = performance.now();
+        requestAnimationFrame(loop);
+        canvas.focus();
+      });
+      canvas.addEventListener("mousedown", () => canvas.focus());
+      window.addEventListener("resize", init);
+    </script>
+  </body>
+</html>
